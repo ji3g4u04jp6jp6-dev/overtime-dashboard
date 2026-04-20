@@ -741,7 +741,7 @@ function renderChart(entries) {
   }
 
   const canvasWrap = document.createElement('div');
-  canvasWrap.style.cssText = 'position:relative;height:350px;width:100%;';
+  canvasWrap.style.cssText = 'position:relative;height:350px;min-height:350px;width:100%;';
   const canvas = document.createElement('canvas');
   canvasWrap.appendChild(canvas);
   wrap.appendChild(canvasWrap);
