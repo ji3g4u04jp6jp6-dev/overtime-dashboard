@@ -1,886 +1,181 @@
 <!DOCTYPE html>
-<!-- saved from url=(0057)file:///C:/Users/USER/Downloads/overtime_dashboard_8.html -->responsive:false,maintainAspectRatio:false,width:1100,height:350,
-<html lang="zh-TW"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>加班統計</title>
-<script src="./加班統計網頁版_files/chart.umd.min.js.下載"></script>
-<link href="./加班統計網頁版_files/css2" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Noto+Sans+TC:wght@300;400;500;700&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg:        #f5f0eb;
-    --bg2:       #ede6dc;
-    --surface:   #faf7f3;
-    --surface2:  #f0e9df;
-    --border:    #ddd4c5;
-    --border2:   #c9bfb0;
-    --gold:      #c8a882;
-    --gold2:     #b8916a;
-    --green:     #3d5a52;
-    --green2:    #2e4840;
-    --green-lt:  #e8efed;
-    --blush:     #e8c4b8;
-    --blush2:    #d4a898;
-    --text:      #3a3028;
-    --text2:     #6b5d52;
-    --muted:     #9e9088;
-    --white:     #fdfaf7;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Noto Sans TC', sans-serif;
-    min-height: 100vh;
-    padding: 48px 32px;
-  }
-
-  /* subtle texture overlay */
-  body::before {
-    content: '';
-    position: fixed; inset: 0;
-    background-image:
-      radial-gradient(circle at 20% 20%, rgba(200,168,130,0.06) 0%, transparent 50%),
-      radial-gradient(circle at 80% 80%, rgba(61,90,82,0.05) 0%, transparent 50%);
-    pointer-events: none; z-index: 0;
-  }
-
-  .container { max-width: 1200px; margin: 0 auto; position: relative; z-index: 1; }
-
-  /* ── Header ── */
-  header {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    margin-bottom: 48px;
-    padding-bottom: 28px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .header-left { display: flex; flex-direction: column; gap: 6px; }
-
-  .header-eyebrow {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--gold2);
-  }
-
-  .header-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 52px;
-    font-weight: 300;
-    letter-spacing: -1px;
-    color: var(--text);
-    line-height: 1;
-  }
-
-  .header-title em {
-    font-style: italic;
-    color: var(--green);
-    font-weight: 300;
-  }
-
-  .header-sub {
-    font-size: 12px;
-    color: var(--muted);
-    font-weight: 300;
-    margin-top: 4px;
-    letter-spacing: 0.3px;
-  }
-
-  .header-right { display: flex; align-items: center; gap: 10px; padding-bottom: 6px; }
-
-  .status-pill {
-    display: flex; align-items: center; gap: 8px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 6px 14px;
-  }
-
-  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border2); transition: all .3s; }
-  .status-dot.live { background: var(--green); box-shadow: 0 0 6px rgba(61,90,82,0.5); animation: pulse 2s infinite; }
-  .status-dot.error { background: var(--blush2); box-shadow: 0 0 6px rgba(212,168,152,0.5); }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-  .status-text { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; letter-spacing: 0.5px; }
-
-  /* ── Summary Cards ── */
-  .summary-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin-bottom: 36px;
-  }
-
-  @media (max-width: 800px) { .summary-grid { grid-template-columns: repeat(2,1fr); } }
-
-  .summary-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 24px 22px;
-    position: relative;
-    overflow: hidden;
-    opacity: 0;
-    transform: translateY(12px);
-    transition: opacity .6s ease, transform .6s ease;
-  }
-  .summary-card.visible { opacity: 1; transform: translateY(0); }
-
-  .summary-card::before {
-    content: '';
-    position: absolute;
-    bottom: 0; right: 0;
-    width: 80px; height: 80px;
-    border-radius: 50%;
-    opacity: 0.07;
-  }
-  .summary-card:nth-child(1)::before { background: var(--gold); transform: translate(30px,30px); }
-  .summary-card:nth-child(2)::before { background: var(--green); transform: translate(30px,30px); }
-  .summary-card:nth-child(3)::before { background: var(--blush); transform: translate(30px,30px); }
-  .summary-card:nth-child(4)::before { background: var(--gold2); transform: translate(30px,30px); }
-
-  .card-label {
-    font-size: 10px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    margin-bottom: 12px;
-    font-weight: 400;
-  }
-
-  .card-value {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 42px;
-    font-weight: 300;
-    line-height: 1;
-    margin-bottom: 6px;
-  }
-  .summary-card:nth-child(1) .card-value { color: var(--gold2); }
-  .summary-card:nth-child(2) .card-value { color: var(--green); }
-  .summary-card:nth-child(3) .card-value { color: var(--blush2); }
-  .summary-card:nth-child(4) .card-value { color: var(--gold2); }
-
-  .card-sub { font-size: 11px; color: var(--muted); font-weight: 300; }
-
-  /* ── Controls ── */
-  .controls {
-    display: flex;
-    gap: 16px;
-    margin-bottom: 28px;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-
-  .control-label {
-    font-size: 10px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    align-self: center;
-    white-space: nowrap;
-  }
-
-  .control-group { display: flex; gap: 6px; flex-wrap: wrap; }
-
-  .divider { width: 1px; height: 28px; background: var(--border); align-self: center; }
-
-  .tab-btn {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--muted);
-    padding: 7px 16px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-family: 'Noto Sans TC', sans-serif;
-    cursor: pointer;
-    transition: all .2s;
-    font-weight: 400;
-  }
-  .tab-btn:hover { border-color: var(--gold); color: var(--text); }
-  .tab-btn.active {
-    background: var(--green);
-    color: var(--white);
-    border-color: var(--green);
-    font-weight: 500;
-  }
-  .tab-btn.type-btn.active {
-    background: var(--gold);
-    border-color: var(--gold);
-    color: var(--white);
-  }
-
-  /* ── Chart Section ── */
-  .chart-section {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 32px;
-    margin-bottom: 20px;
-  }
-
-  .chart-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 28px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .chart-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 22px;
-    font-weight: 400;
-    color: var(--text);
-    letter-spacing: -0.3px;
-  }
-  .chart-subtitle { font-size: 11px; color: var(--muted); margin-top: 4px; font-weight: 300; letter-spacing: 0.3px; }
-  .chart-wrap { position: relative; height: 380px; min-height: 380px; }
-  .chart-wrap canvas { position: absolute; top: 0; left: 0; }
-
-  /* ── Table ── */
-  .table-section {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 32px;
-    overflow-x: auto;
-  }
-
-  .section-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 22px;
-    font-weight: 400;
-    margin-bottom: 24px;
-    color: var(--text);
-    padding-bottom: 16px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th {
-    text-align: left; padding: 10px 16px;
-    color: var(--muted); font-size: 10px;
-    text-transform: uppercase; letter-spacing: 1.5px;
-    border-bottom: 1px solid var(--border); font-weight: 400;
-  }
-  td { padding: 13px 16px; border-bottom: 1px solid rgba(221,212,197,0.5); color: var(--text); font-weight: 300; }
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: var(--bg2); }
-
-  .badge {
-    display: inline-block; padding: 3px 11px;
-    border-radius: 10px; font-size: 11px;
-    font-weight: 400; font-family: 'DM Mono', monospace;
-  }
-  .badge-outer { background: rgba(200,168,130,0.15); color: var(--gold2); border: 1px solid rgba(200,168,130,0.3); }
-  .badge-inner { background: rgba(61,90,82,0.1); color: var(--green); border: 1px solid rgba(61,90,82,0.2); }
-  .badge-both  { background: rgba(232,196,184,0.2); color: var(--blush2); border: 1px solid rgba(212,168,152,0.3); }
-  .badge-high  { background: rgba(212,168,152,0.2); color: #a05a48; border: 1px solid rgba(212,168,152,0.4); }
-  .badge-mid   { background: rgba(200,168,130,0.15); color: var(--gold2); border: 1px solid rgba(200,168,130,0.3); }
-  .badge-low   { background: rgba(61,90,82,0.1); color: var(--green); border: 1px solid rgba(61,90,82,0.2); }
-
-  .rank { font-family: 'DM Mono', monospace; color: var(--muted); font-size: 12px; }
-  .rank-1 { color: var(--gold2); font-weight: 500; }
-
-  .loading-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; gap: 20px; }
-  .spinner {
-    width: 36px; height: 36px;
-    border: 2px solid var(--border);
-    border-top-color: var(--green);
-    border-radius: 50%;
-    animation: spin .9s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-text { color: var(--muted); font-size: 13px; font-weight: 300; letter-spacing: 0.5px; }
-
-  .error-box {
-    background: rgba(212,168,152,0.1);
-    border: 1px solid rgba(212,168,152,0.4);
-    border-radius: 16px; padding: 28px;
-    text-align: center; color: #a05a48;
-  }
-  .error-box p { margin-top: 8px; font-size: 13px; color: var(--muted); font-weight: 300; }
-  .no-data { color: var(--muted); font-size: 13px; text-align: center; padding: 60px; font-weight: 300; letter-spacing: 0.5px; }
-
-  footer {
-    margin-top: 36px; text-align: center;
-    font-size: 10px; color: var(--muted);
-    padding-top: 20px; border-top: 1px solid var(--border);
-    letter-spacing: 1px; text-transform: uppercase; font-weight: 300;
-  }
+  :root{--bg:#f5f0eb;--bg2:#ede6dc;--surface:#faf7f3;--border:#ddd4c5;--border2:#c9bfb0;--gold:#c8a882;--gold2:#b8916a;--green:#3d5a52;--blush:#e8c4b8;--blush2:#d4a898;--text:#3a3028;--text2:#6b5d52;--muted:#9e9088;--white:#fdfaf7;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Noto Sans TC',sans-serif;min-height:100vh;padding:48px 32px;}
+  body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(circle at 20% 20%,rgba(200,168,130,0.06) 0%,transparent 50%),radial-gradient(circle at 80% 80%,rgba(61,90,82,0.05) 0%,transparent 50%);pointer-events:none;z-index:0;}
+  .container{max-width:1200px;margin:0 auto;position:relative;z-index:1;}
+  header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:48px;padding-bottom:28px;border-bottom:1px solid var(--border);}
+  .header-left{display:flex;flex-direction:column;gap:6px;}
+  .header-eyebrow{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--gold2);}
+  .header-title{font-family:'Cormorant Garamond',serif;font-size:52px;font-weight:300;letter-spacing:-1px;color:var(--text);line-height:1;}
+  .header-title em{font-style:italic;color:var(--green);font-weight:300;}
+  .header-sub{font-size:12px;color:var(--muted);font-weight:300;margin-top:4px;}
+  .header-right{display:flex;align-items:center;gap:10px;padding-bottom:6px;}
+  .status-pill{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:6px 14px;}
+  .status-dot{width:7px;height:7px;border-radius:50%;background:var(--border2);transition:all .3s;}
+  .status-dot.live{background:var(--green);box-shadow:0 0 6px rgba(61,90,82,0.5);animation:pulse 2s infinite;}
+  .status-dot.error{background:var(--blush2);}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  .status-text{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;letter-spacing:0.5px;}
+  .summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:36px;}
+  @media(max-width:800px){.summary-grid{grid-template-columns:repeat(2,1fr);}}
+  .summary-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px 22px;position:relative;overflow:hidden;opacity:0;transform:translateY(12px);transition:opacity .6s,transform .6s;}
+  .summary-card.visible{opacity:1;transform:translateY(0);}
+  .summary-card::before{content:'';position:absolute;bottom:0;right:0;width:80px;height:80px;border-radius:50%;opacity:0.07;}
+  .summary-card:nth-child(1)::before{background:var(--gold);transform:translate(30px,30px);}
+  .summary-card:nth-child(2)::before{background:var(--green);transform:translate(30px,30px);}
+  .summary-card:nth-child(3)::before{background:var(--blush);transform:translate(30px,30px);}
+  .summary-card:nth-child(4)::before{background:var(--gold2);transform:translate(30px,30px);}
+  .card-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;}
+  .card-value{font-family:'Cormorant Garamond',serif;font-size:42px;font-weight:300;line-height:1;margin-bottom:6px;}
+  .summary-card:nth-child(1) .card-value{color:var(--gold2);}
+  .summary-card:nth-child(2) .card-value{color:var(--green);}
+  .summary-card:nth-child(3) .card-value{color:var(--blush2);}
+  .summary-card:nth-child(4) .card-value{color:var(--gold2);}
+  .card-sub{font-size:11px;color:var(--muted);font-weight:300;}
+  .controls{display:flex;gap:16px;margin-bottom:28px;flex-wrap:wrap;align-items:center;}
+  .control-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;align-self:center;white-space:nowrap;}
+  .control-group{display:flex;gap:6px;flex-wrap:wrap;}
+  .divider{width:1px;height:28px;background:var(--border);align-self:center;}
+  .tab-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:7px 16px;border-radius:20px;font-size:12px;font-family:'Noto Sans TC',sans-serif;cursor:pointer;transition:all .2s;}
+  .tab-btn:hover{border-color:var(--gold);color:var(--text);}
+  .tab-btn.active{background:var(--green);color:var(--white);border-color:var(--green);font-weight:500;}
+  .tab-btn.type-btn.active{background:var(--gold);border-color:var(--gold);color:var(--white);}
+  .chart-section{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:32px;margin-bottom:20px;}
+  .chart-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--border);}
+  .chart-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:400;color:var(--text);}
+  .chart-subtitle{font-size:11px;color:var(--muted);margin-top:4px;font-weight:300;}
+  .chart-wrap{width:100%;overflow-x:auto;}
+  .chart-wrap canvas{display:block;}
+  .table-section{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:32px;overflow-x:auto;}
+  .section-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:400;margin-bottom:24px;color:var(--text);padding-bottom:16px;border-bottom:1px solid var(--border);}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;padding:10px 16px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:1.5px;border-bottom:1px solid var(--border);font-weight:400;}
+  td{padding:13px 16px;border-bottom:1px solid rgba(221,212,197,0.5);color:var(--text);font-weight:300;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:var(--bg2);}
+  .badge{display:inline-block;padding:3px 11px;border-radius:10px;font-size:11px;font-family:'DM Mono',monospace;}
+  .badge-outer{background:rgba(200,168,130,0.15);color:var(--gold2);border:1px solid rgba(200,168,130,0.3);}
+  .badge-inner{background:rgba(61,90,82,0.1);color:var(--green);border:1px solid rgba(61,90,82,0.2);}
+  .badge-both{background:rgba(232,196,184,0.2);color:var(--blush2);border:1px solid rgba(212,168,152,0.3);}
+  .badge-high{background:rgba(212,168,152,0.2);color:#a05a48;border:1px solid rgba(212,168,152,0.4);}
+  .badge-mid{background:rgba(200,168,130,0.15);color:var(--gold2);border:1px solid rgba(200,168,130,0.3);}
+  .badge-low{background:rgba(61,90,82,0.1);color:var(--green);border:1px solid rgba(61,90,82,0.2);}
+  .rank{font-family:'DM Mono',monospace;color:var(--muted);font-size:12px;}
+  .rank-1{color:var(--gold2);font-weight:500;}
+  .loading-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;height:300px;gap:20px;}
+  .spinner{width:36px;height:36px;border:2px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .9s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading-text{color:var(--muted);font-size:13px;font-weight:300;}
+  .error-box{background:rgba(212,168,152,0.1);border:1px solid rgba(212,168,152,0.4);border-radius:16px;padding:28px;text-align:center;color:#a05a48;}
+  .error-box p{margin-top:8px;font-size:13px;color:var(--muted);}
+  .no-data{color:var(--muted);font-size:13px;text-align:center;padding:60px;}
+  footer{margin-top:36px;text-align:center;font-size:10px;color:var(--muted);padding-top:20px;border-top:1px solid var(--border);letter-spacing:1px;text-transform:uppercase;}
 </style>
-<script src="./加班統計網頁版_files/json.txt"></script><script src="./加班統計網頁版_files/json(1).txt"></script></head>
+</head>
 <body>
 <div class="container">
-
   <header>
     <div class="header-left">
       <div class="header-eyebrow">Overtime Report · 2026</div>
       <h1 class="header-title">加班<em>統計</em></h1>
-      <p class="header-sub" id="last-updated">更新於 2026/4/20 下午5:43:38 · 外場 33 筆 · 內場 66 筆</p>
+      <p class="header-sub" id="last-updated">資料載入中...</p>
     </div>
     <div class="header-right">
       <div class="status-pill">
-        <div class="status-dot live" id="status-dot"></div>
-        <span class="status-text" id="status-text">live</span>
+        <div class="status-dot" id="status-dot"></div>
+        <span class="status-text" id="status-text">connecting</span>
       </div>
     </div>
   </header>
-
   <div class="summary-grid">
-    <div class="summary-card visible" id="sc1">
-      <div class="card-label">門市數量</div>
-      <div class="card-value" id="val-stores">5</div>
-      <div class="card-sub">間門市</div>
-    </div>
-    <div class="summary-card visible" id="sc2">
-      <div class="card-label">美容師人數</div>
-      <div class="card-value" id="val-staff">34</div>
-      <div class="card-sub">位美容師</div>
-    </div>
-    <div class="summary-card visible" id="sc3">
-      <div class="card-label">加班總時數</div>
-      <div class="card-value" id="val-total">219</div>
-      <div class="card-sub">小時（已審核）</div>
-    </div>
-    <div class="summary-card visible" id="sc4">
-      <div class="card-label">平均每人加班</div>
-      <div class="card-value" id="val-avg">6.4</div>
-      <div class="card-sub">小時／人</div>
-    </div>
+    <div class="summary-card" id="sc1"><div class="card-label">門市數量</div><div class="card-value" id="val-stores">—</div><div class="card-sub">間門市</div></div>
+    <div class="summary-card" id="sc2"><div class="card-label">美容師人數</div><div class="card-value" id="val-staff">—</div><div class="card-sub">位美容師</div></div>
+    <div class="summary-card" id="sc3"><div class="card-label">加班總時數</div><div class="card-value" id="val-total">—</div><div class="card-sub">小時（已審核）</div></div>
+    <div class="summary-card" id="sc4"><div class="card-label">平均每人加班</div><div class="card-value" id="val-avg">—</div><div class="card-sub">小時／人</div></div>
   </div>
-
   <div class="controls">
     <span class="control-label">門市</span>
-    <div class="control-group" id="store-tabs"><button class="tab-btn active">全部</button><button class="tab-btn">中和</button><button class="tab-btn">龍江</button><button class="tab-btn">希爾頓</button><button class="tab-btn">信義</button><button class="tab-btn">館前</button></div>
+    <div class="control-group" id="store-tabs"></div>
     <div class="divider"></div>
     <span class="control-label">類別</span>
     <div class="control-group">
-      <button class="tab-btn type-btn active" data-type="全部" onclick="setType(&#39;全部&#39;)">全部</button>
-      <button class="tab-btn type-btn" data-type="外場" onclick="setType(&#39;外場&#39;)">外場</button>
-      <button class="tab-btn type-btn" data-type="內場" onclick="setType(&#39;內場&#39;)">內場</button>
+      <button class="tab-btn type-btn active" data-type="全部" onclick="setType('全部')">全部</button>
+      <button class="tab-btn type-btn" data-type="外場" onclick="setType('外場')">外場</button>
+      <button class="tab-btn type-btn" data-type="內場" onclick="setType('內場')">內場</button>
     </div>
   </div>
-
   <div class="chart-section">
     <div class="chart-header">
       <div>
-        <div class="chart-title" id="chart-title">全部門市 · 外場＋內場 · 各美容師加班時數</div>
-        <div class="chart-subtitle" id="chart-subtitle">共 34 位美容師 · 最高 19.5 小時 · 僅計算已審核同意記錄</div>
+        <div class="chart-title" id="chart-title">各美容師加班時數</div>
+        <div class="chart-subtitle" id="chart-subtitle">僅顯示審查結果為「同意」的記錄</div>
       </div>
     </div>
-    <div class="chart-wrap" id="chart-wrap"><div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 16px; flex-shrink: 0;"><div style="display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text2); font-family: &quot;Noto Sans TC&quot;, sans-serif; font-weight: 300;"><span style="width:10px;height:10px;border-radius:50%;background:#d4a898;display:inline-block;flex-shrink:0;"></span>館前</div><div style="display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text2); font-family: &quot;Noto Sans TC&quot;, sans-serif; font-weight: 300;"><span style="width:10px;height:10px;border-radius:50%;background:#e8c4b8;display:inline-block;flex-shrink:0;"></span>希爾頓</div><div style="display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text2); font-family: &quot;Noto Sans TC&quot;, sans-serif; font-weight: 300;"><span style="width:10px;height:10px;border-radius:50%;background:#c8a882;display:inline-block;flex-shrink:0;"></span>中和</div><div style="display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text2); font-family: &quot;Noto Sans TC&quot;, sans-serif; font-weight: 300;"><span style="width:10px;height:10px;border-radius:50%;background:#6b8c82;display:inline-block;flex-shrink:0;"></span>信義</div><div style="display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text2); font-family: &quot;Noto Sans TC&quot;, sans-serif; font-weight: 300;"><span style="width:10px;height:10px;border-radius:50%;background:#3d5a52;display:inline-block;flex-shrink:0;"></span>龍江</div></div><div style="position: relative; height: 350px; width: 100%;"><canvas width="1418" height="437" style="display: block; box-sizing: border-box; height: 350px; width: 1134px;"></canvas></div></div>
+    <div id="legend-wrap" style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:16px;"></div>
+    <div class="chart-wrap" id="chart-wrap">
+      <div class="loading-wrap"><div class="spinner"></div><div class="loading-text">正在讀取資料...</div></div>
+    </div>
   </div>
-
-  <div class="table-section" id="table-section" style="display: block;">
+  <div class="table-section" id="table-section" style="display:none;">
     <div class="section-title">加班明細排行</div>
     <table>
-      <thead>
-        <tr><th>排名</th><th>門市</th><th>美容師</th><th>類別</th><th>加班時數</th><th>佔比</th><th>程度</th></tr>
-      </thead>
-      <tbody id="table-body"><tr>
-      <td><span class="rank rank-1">#1</span></td>
-      <td>館前</td><td>吳思嫺</td>
-      <td><span class="badge badge-inner">內場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">19.5</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">8.9%</td>
-      <td><span class="badge badge-mid">中等</span></td></tr><tr>
-      <td><span class="rank ">#2</span></td>
-      <td>館前</td><td>余文珍</td>
-      <td><span class="badge badge-inner">內場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">17</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">7.8%</td>
-      <td><span class="badge badge-mid">中等</span></td></tr><tr>
-      <td><span class="rank ">#3</span></td>
-      <td>希爾頓</td><td>張楨怡</td>
-      <td><span class="badge badge-inner">內場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">16</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">7.3%</td>
-      <td><span class="badge badge-mid">中等</span></td></tr><tr>
-      <td><span class="rank ">#4</span></td>
-      <td>中和</td><td>周恩婕</td>
-      <td><span class="badge badge-inner">內場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">15.5</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">7.1%</td>
-      <td><span class="badge badge-mid">中等</span></td></tr><tr>
-      <td><span class="rank ">#5</span></td>
-      <td>希爾頓</td><td>郭宣妘</td>
-      <td><span class="badge badge-outer">外場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">14</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">6.4%</td>
-      <td><span class="badge badge-mid">中等</span></td></tr><tr>
-      <td><span class="rank ">#6</span></td>
-      <td>中和</td><td>鄭育紋</td>
-      <td><span class="badge badge-inner">內場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">14</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">6.4%</td>
-      <td><span class="badge badge-mid">中等</span></td></tr><tr>
-      <td><span class="rank ">#7</span></td>
-      <td>信義</td><td>鄭語菲</td>
-      <td><span class="badge badge-inner">內場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">13.5</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">6.2%</td>
-      <td><span class="badge badge-mid">中等</span></td></tr><tr>
-      <td><span class="rank ">#8</span></td>
-      <td>希爾頓</td><td>許瑋真</td>
-      <td><span class="badge badge-outer">外場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">10.5</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">4.8%</td>
-      <td><span class="badge badge-mid">中等</span></td></tr><tr>
-      <td><span class="rank ">#9</span></td>
-      <td>館前</td><td>張榕榕</td>
-      <td><span class="badge badge-inner">內場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">7.5</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">3.4%</td>
-      <td><span class="badge badge-low">正常</span></td></tr><tr>
-      <td><span class="rank ">#10</span></td>
-      <td>龍江</td><td>羅郁婷</td>
-      <td><span class="badge badge-inner">內場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">7.5</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">3.4%</td>
-      <td><span class="badge badge-low">正常</span></td></tr><tr>
-      <td><span class="rank ">#11</span></td>
-      <td>龍江</td><td>孫宛伶</td>
-      <td><span class="badge badge-outer">外場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">7</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">3.2%</td>
-      <td><span class="badge badge-low">正常</span></td></tr><tr>
-      <td><span class="rank ">#12</span></td>
-      <td>館前</td><td>周宥慧</td>
-      <td><span class="badge badge-inner">內場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">7</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">3.2%</td>
-      <td><span class="badge badge-low">正常</span></td></tr><tr>
-      <td><span class="rank ">#13</span></td>
-      <td>希爾頓</td><td>陳妤涵</td>
-      <td><span class="badge badge-inner">內場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">7</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">3.2%</td>
-      <td><span class="badge badge-low">正常</span></td></tr><tr>
-      <td><span class="rank ">#14</span></td>
-      <td>信義</td><td>李苡瑄</td>
-      <td><span class="badge badge-outer">外場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">5.5</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">2.5%</td>
-      <td><span class="badge badge-low">正常</span></td></tr><tr>
-      <td><span class="rank ">#15</span></td>
-      <td>中和</td><td>吳燕妮</td>
-      <td><span class="badge badge-outer">外場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">5</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">2.3%</td>
-      <td><span class="badge badge-low">正常</span></td></tr><tr>
-      <td><span class="rank ">#16</span></td>
-      <td>信義</td><td>鄭宜婷</td>
-      <td><span class="badge badge-inner">內場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">5</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">2.3%</td>
-      <td><span class="badge badge-low">正常</span></td></tr><tr>
-      <td><span class="rank ">#17</span></td>
-      <td>館前</td><td>范容甄</td>
-      <td><span class="badge badge-outer">外場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">4.5</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">2.1%</td>
-      <td><span class="badge badge-low">正常</span></td></tr><tr>
-      <td><span class="rank ">#18</span></td>
-      <td>信義</td><td>鄭衣琁</td>
-      <td><span class="badge badge-outer">外場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">4</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">1.8%</td>
-      <td><span class="badge badge-low">正常</span></td></tr><tr>
-      <td><span class="rank ">#19</span></td>
-      <td>希爾頓</td><td>王秀花</td>
-      <td><span class="badge badge-inner">內場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">4</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">1.8%</td>
-      <td><span class="badge badge-low">正常</span></td></tr><tr>
-      <td><span class="rank ">#20</span></td>
-      <td>信義</td><td>陳昱吟</td>
-      <td><span class="badge badge-inner">內場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">4</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">1.8%</td>
-      <td><span class="badge badge-low">正常</span></td></tr><tr>
-      <td><span class="rank ">#21</span></td>
-      <td>希爾頓</td><td>潘佳慧</td>
-      <td><span class="badge badge-outer">外場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">3.5</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">1.6%</td>
-      <td><span class="badge badge-low">正常</span></td></tr><tr>
-      <td><span class="rank ">#22</span></td>
-      <td>希爾頓</td><td>陳玟錡</td>
-      <td><span class="badge badge-inner">內場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">3.5</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">1.6%</td>
-      <td><span class="badge badge-low">正常</span></td></tr><tr>
-      <td><span class="rank ">#23</span></td>
-      <td>龍江</td><td>林怡君</td>
-      <td><span class="badge badge-outer">外場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">3</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">1.4%</td>
-      <td><span class="badge badge-low">正常</span></td></tr><tr>
-      <td><span class="rank ">#24</span></td>
-      <td>龍江</td><td>黃茹舷</td>
-      <td><span class="badge badge-outer">外場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">3</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">1.4%</td>
-      <td><span class="badge badge-low">正常</span></td></tr><tr>
-      <td><span class="rank ">#25</span></td>
-      <td>信義</td><td>孫嘉嬬</td>
-      <td><span class="badge badge-inner">內場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">3</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">1.4%</td>
-      <td><span class="badge badge-low">正常</span></td></tr><tr>
-      <td><span class="rank ">#26</span></td>
-      <td>信義</td><td>陳翊沁</td>
-      <td><span class="badge badge-inner">內場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">3</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">1.4%</td>
-      <td><span class="badge badge-low">正常</span></td></tr><tr>
-      <td><span class="rank ">#27</span></td>
-      <td>龍江</td><td>羅佳盈</td>
-      <td><span class="badge badge-inner">內場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">2.5</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">1.1%</td>
-      <td><span class="badge badge-low">正常</span></td></tr><tr>
-      <td><span class="rank ">#28</span></td>
-      <td>信義</td><td>何家艷</td>
-      <td><span class="badge badge-outer">外場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">2</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">0.9%</td>
-      <td><span class="badge badge-low">正常</span></td></tr><tr>
-      <td><span class="rank ">#29</span></td>
-      <td>龍江</td><td>周宛萱</td>
-      <td><span class="badge badge-inner">內場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">2</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">0.9%</td>
-      <td><span class="badge badge-low">正常</span></td></tr><tr>
-      <td><span class="rank ">#30</span></td>
-      <td>希爾頓</td><td>顏玉真</td>
-      <td><span class="badge badge-inner">內場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">1.5</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">0.7%</td>
-      <td><span class="badge badge-low">正常</span></td></tr><tr>
-      <td><span class="rank ">#31</span></td>
-      <td>館前</td><td>王筱雯</td>
-      <td><span class="badge badge-outer">外場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">1</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">0.5%</td>
-      <td><span class="badge badge-low">正常</span></td></tr><tr>
-      <td><span class="rank ">#32</span></td>
-      <td>中和</td><td>游書圓</td>
-      <td><span class="badge badge-outer">外場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">1</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">0.5%</td>
-      <td><span class="badge badge-low">正常</span></td></tr><tr>
-      <td><span class="rank ">#33</span></td>
-      <td>龍江</td><td>李曉惠</td>
-      <td><span class="badge badge-inner">內場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">1</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">0.5%</td>
-      <td><span class="badge badge-low">正常</span></td></tr><tr>
-      <td><span class="rank ">#34</span></td>
-      <td>希爾頓</td><td>陳宥溱</td>
-      <td><span class="badge badge-inner">內場</span></td>
-      <td style="font-family:&#39;DM Mono&#39;,monospace;font-weight:400;color:var(--text)">1</td>
-      <td style="color:var(--muted);font-family:&#39;DM Mono&#39;,monospace;font-size:12px;">0.5%</td>
-      <td><span class="badge badge-low">正常</span></td></tr></tbody>
+      <thead><tr><th>排名</th><th>門市</th><th>美容師</th><th>類別</th><th>加班時數</th><th>佔比</th><th>程度</th></tr></thead>
+      <tbody id="table-body"></tbody>
     </table>
   </div>
-
   <footer>資料來源 Google Sheets · 僅計算審查結果「同意」之記錄 · 每次開啟自動更新</footer>
 </div>
-
 <script>
-const SHEET_ID = '1DUyrPH6_ktaNgHVK5fQmVFCscBGJEWX3WLNp7k2gV6g';
-const BASE     = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq`;
-
-// One color per store
-const STORE_COLORS = {
-  '__default__': ['#c8a882','#3d5a52','#e8c4b8','#6b8c82','#d4a898']
-};
-let storeColorMap = {};
-
-function getStoreColor(store) {
-  if (!storeColorMap[store]) {
-    const palette = ['#c8a882','#3d5a52','#e8c4b8','#6b8c82','#d4a898'];
-    const idx = Object.keys(storeColorMap).length % palette.length;
-    storeColorMap[store] = palette[idx];
-  }
-  return storeColorMap[store];
+var SHEET_ID='1DUyrPH6_ktaNgHVK5fQmVFCscBGJEWX3WLNp7k2gV6g';
+var BASE='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq';
+var PALETTE=['#c8a882','#3d5a52','#e8c4b8','#6b8c82','#d4a898'];
+var storeColorMap={},allData=[],chartInstance=null,currentStore='全部',currentType='全部',loadedCount=0,results={};
+function getStoreColor(s){return storeColorMap[s]||PALETTE[0];}
+function parseHours(v){if(!v&&v!==0)return 0;var n=parseFloat(String(v).toUpperCase().replace(/\s/g,'').replace(/HR?$/,''));return isNaN(n)?0:n;}
+window.handleOuter=function(d){results.outer=d;loadedCount++;if(loadedCount===2)onBothLoaded();};
+window.handleInner=function(d){results.inner=d;loadedCount++;if(loadedCount===2)onBothLoaded();};
+function gv(r,i){return(r.c[i]&&(r.c[i].v!==null&&r.c[i].v!==undefined?r.c[i].v:r.c[i].f))||'';}
+function parseOuter(j){var a=[];(j.table&&j.table.rows||[]).forEach(function(r){if(!r.c)return;var s=String(gv(r,0)).trim(),n=String(gv(r,4)).trim(),h=parseHours(gv(r,7)),res=String(gv(r,9)).trim();if(s&&n&&h>0&&res==='同意')a.push({store:s,name:n,hours:h,type:'外場'});});return a;}
+function parseInner(j){var a=[];(j.table&&j.table.rows||[]).forEach(function(r){if(!r.c)return;var s=String(gv(r,0)).trim(),n=String(gv(r,3)).trim(),h=parseHours(gv(r,7)),res=String(gv(r,8)).trim();if(s&&n&&h>0&&res==='同意')a.push({store:s,name:n,hours:h,type:'內場'});});return a;}
+function getFiltered(){return allData.filter(function(d){return(currentStore==='全部'||d.store===currentStore)&&(currentType==='全部'||d.type===currentType);});}
+function aggregate(data){var m={};data.forEach(function(d){var k=d.store+'__'+d.name;if(!m[k])m[k]={store:d.store,name:d.name,hours:0,types:[]};m[k].hours+=d.hours;if(m[k].types.indexOf(d.type)<0)m[k].types.push(d.type);});return Object.values(m).map(function(v){return{store:v.store,name:v.name,hours:Math.round(v.hours*10)/10,typeLabel:v.types.length>1?'外場＋內場':v.types[0]};}).sort(function(a,b){return b.hours-a.hours;});}
+function getStores(){var s=['全部'];allData.forEach(function(d){if(s.indexOf(d.store)<0)s.push(d.store);});return s;}
+function renderSummary(data){var st=new Set(data.map(function(d){return d.store;})),nm=new Set(data.map(function(d){return d.name;})),total=Math.round(data.reduce(function(s,d){return s+d.hours;},0)*10)/10,avg=nm.size?(total/nm.size).toFixed(1):0;document.getElementById('val-stores').textContent=st.size;document.getElementById('val-staff').textContent=nm.size;document.getElementById('val-total').textContent=total;document.getElementById('val-avg').textContent=avg;['sc1','sc2','sc3','sc4'].forEach(function(id,i){setTimeout(function(){document.getElementById(id).classList.add('visible');},i*100);});}
+function renderStoreTabs(){var c=document.getElementById('store-tabs');c.innerHTML='';getStores().forEach(function(s){var b=document.createElement('button');b.className='tab-btn'+(s===currentStore?' active':'');b.textContent=s;b.onclick=function(){currentStore=s;renderAll();};c.appendChild(b);});}
+function setType(t){currentType=t;document.querySelectorAll('.type-btn').forEach(function(b){b.classList.toggle('active',b.dataset.type===t);});renderAll();}
+function renderChart(entries){
+  var wrap=document.getElementById('chart-wrap');wrap.innerHTML='';document.getElementById('legend-wrap').innerHTML='';
+  if(!entries.length){wrap.innerHTML='<div class="no-data">目前無已審核同意的加班記錄</div>';return;}
+  if(currentStore==='全部'){var leg=document.getElementById('legend-wrap'),sts=[];entries.forEach(function(e){if(sts.indexOf(e.store)<0)sts.push(e.store);});sts.forEach(function(s){var el=document.createElement('div');el.style.cssText='display:flex;align-items:center;gap:7px;font-size:12px;color:#6b5d52;font-family:"Noto Sans TC",sans-serif;font-weight:300;';el.innerHTML='<span style="width:10px;height:10px;border-radius:50%;background:'+getStoreColor(s)+';display:inline-block;"></span>'+s;leg.appendChild(el);});}
+  var canvas=document.createElement('canvas');
+  var W=Math.max(entries.length*40,600);
+  canvas.setAttribute('width',W);canvas.setAttribute('height',350);
+  canvas.style.width=W+'px';canvas.style.height='350px';canvas.style.display='block';
+  wrap.appendChild(canvas);
+  var labels=entries.map(function(e){return currentStore==='全部'?e.store+' '+e.name:e.name;});
+  var values=entries.map(function(e){return e.hours;});
+  if(chartInstance){chartInstance.destroy();chartInstance=null;}
+  chartInstance=new Chart(canvas,{type:'bar',data:{labels:labels,datasets:[{data:values,backgroundColor:entries.map(function(e){return getStoreColor(e.store)+'cc';}),borderColor:entries.map(function(e){return getStoreColor(e.store);}),borderWidth:1.5,borderRadius:8,borderSkipped:false}]},options:{responsive:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#faf7f3',borderColor:'#ddd4c5',borderWidth:1,titleColor:'#3a3028',bodyColor:'#9e9088',padding:14,callbacks:{title:function(ctx){var e=entries[ctx[0].dataIndex];return e.store+' '+e.name;},label:function(ctx){return ' 加班時數：'+ctx.parsed.y+' 小時';}}}},scales:{x:{grid:{color:'rgba(221,212,197,0.5)'},ticks:{color:'#9e9088',font:{size:11,family:'Noto Sans TC'},maxRotation:40}},y:{grid:{color:'rgba(221,212,197,0.5)'},ticks:{color:'#9e9088',font:{size:11,family:'DM Mono'},callback:function(v){return v+' h';}},beginAtZero:true}}}});
+  var sl=currentStore==='全部'?'全部門市':currentStore,tl=currentType==='全部'?'外場＋內場':currentType;
+  document.getElementById('chart-title').textContent=sl+' · '+tl+' · 各美容師加班時數';
+  document.getElementById('chart-subtitle').textContent='共 '+entries.length+' 位美容師 · 最高 '+Math.max.apply(null,values)+' 小時 · 僅計算已審核同意記錄';
 }
-
-let allData = [], chartInstance = null, currentStore = '全部', currentType = '全部';
-let loadedCount = 0;
-const results = {};
-
-function parseHours(val) {
-  if (val === null || val === undefined || val === '') return 0;
-  const str = String(val).toUpperCase().replace(/\s/g, '');
-  const num = parseFloat(str.replace(/HR?$/, ''));
-  return isNaN(num) ? 0 : num;
-}
-
-// 外場：店名(0) 日期(1) 班別(2) 職位(3) 姓名(4) 事由(5) 時間(6) 時數(7) 假別(8) 審查結果(9)
-window.handleOuter = function(data) {
-  results.outer = data;
-  loadedCount++;
-  if (loadedCount === 2) onBothLoaded();
-};
-
-// 內場：店名(0) 日期(1) 職位(2) 姓名(3) 會員姓名(4) 加班事由(5) 時間(6) 時數(7) 審核結果(8)
-window.handleInner = function(data) {
-  results.inner = data;
-  loadedCount++;
-  if (loadedCount === 2) onBothLoaded();
-};
-
-function parseOuter(json) {
-  const data = [];
-  (json.table?.rows || []).forEach(row => {
-    if (!row.c) return;
-    const g = i => row.c[i]?.v ?? row.c[i]?.f ?? '';
-    const store = String(g(0)).trim(), name = String(g(4)).trim();
-    const hours = parseHours(g(7)), result = String(g(9)).trim();
-    if (store && name && hours > 0 && result === '同意')
-      data.push({ store, name, hours, type: '外場' });
-  });
-  return data;
-}
-
-function parseInner(json) {
-  const data = [];
-  (json.table?.rows || []).forEach(row => {
-    if (!row.c) return;
-    const g = i => row.c[i]?.v ?? row.c[i]?.f ?? '';
-    const store = String(g(0)).trim(), name = String(g(3)).trim();
-    const hours = parseHours(g(7)), result = String(g(8)).trim();
-    if (store && name && hours > 0 && result === '同意')
-      data.push({ store, name, hours, type: '內場' });
-  });
-  return data;
-}
-
-function getFiltered() {
-  return allData.filter(d =>
-    (currentStore === '全部' || d.store === currentStore) &&
-    (currentType  === '全部' || d.type  === currentType)
-  );
-}
-
-function aggregate(data) {
-  const map = {};
-  data.forEach(d => {
-    const key = `${d.store}__${d.name}`;
-    if (!map[key]) map[key] = { store: d.store, name: d.name, hours: 0, types: new Set() };
-    map[key].hours += d.hours;
-    map[key].types.add(d.type);
-  });
-  return Object.values(map)
-    .map(v => ({ ...v, typeLabel: v.types.has('外場') && v.types.has('內場') ? '外場＋內場' : [...v.types][0] }))
-    .sort((a,b) => b.hours - a.hours);
-}
-
-function getStores() { return ['全部', ...new Set(allData.map(d => d.store))]; }
-
-function renderSummary(data) {
-  const stores = new Set(data.map(d => d.store));
-  const names  = new Set(data.map(d => d.name));
-  const total  = Math.round(data.reduce((s,d) => s + d.hours, 0) * 10) / 10;
-  const avg    = names.size ? (total / names.size).toFixed(1) : 0;
-  document.getElementById('val-stores').textContent = stores.size;
-  document.getElementById('val-staff').textContent  = names.size;
-  document.getElementById('val-total').textContent  = total;
-  document.getElementById('val-avg').textContent    = avg;
-  ['sc1','sc2','sc3','sc4'].forEach((id,i) =>
-    setTimeout(() => document.getElementById(id).classList.add('visible'), i * 100));
-}
-
-function renderStoreTabs() {
-  const c = document.getElementById('store-tabs');
-  c.innerHTML = '';
-  getStores().forEach(s => {
-    const btn = document.createElement('button');
-    btn.className = 'tab-btn' + (s === currentStore ? ' active' : '');
-    btn.textContent = s;
-    btn.onclick = () => { currentStore = s; renderAll(); };
-    c.appendChild(btn);
-  });
-}
-
-function setType(t) {
-  currentType = t;
-  document.querySelectorAll('.type-btn').forEach(b => b.classList.toggle('active', b.dataset.type === t));
-  renderAll();
-}
-
-function renderChart(entries) {
-  const wrap = document.getElementById('chart-wrap');
-  wrap.innerHTML = '';
-  if (!entries.length) {
-    wrap.innerHTML = '<div class="no-data">目前無已審核同意的加班記錄</div>';
-    return;
-  }
-
-  // Build store color legend (only in 全部 mode)
-  if (currentStore === '全部') {
-    const stores = [...new Set(entries.map(e => e.store))];
-    const legend = document.createElement('div');
-    legend.style.cssText = 'display:flex;gap:20px;flex-wrap:wrap;margin-bottom:16px;flex-shrink:0;';
-    stores.forEach(s => {
-      const item = document.createElement('div');
-      item.style.cssText = 'display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text2);font-family:"Noto Sans TC",sans-serif;font-weight:300;';
-      item.innerHTML = `<span style="width:10px;height:10px;border-radius:50%;background:${getStoreColor(s)};display:inline-block;flex-shrink:0;"></span>${s}`;
-      legend.appendChild(item);
-    });
-    wrap.appendChild(legend);
-  }
-
-  const canvasWrap = document.createElement('div');
-  canvasWrap.style.cssText = 'position:relative;height:350px;min-height:350px;width:100%;';
-  const canvas = document.createElement('canvas');
-  canvasWrap.appendChild(canvas);
-  wrap.appendChild(canvasWrap);
-  const labels = entries.map(e => currentStore === '全部' ? `${e.store} ${e.name}` : e.name);
-  const values = entries.map(e => e.hours);
-  if (chartInstance) chartInstance.destroy();
-
-  chartInstance = new Chart(canvas, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [{
-        label: '加班時數', data: values,
-        backgroundColor: entries.map(e => getStoreColor(e.store) + 'cc'),
-        borderColor:     entries.map(e => getStoreColor(e.store)),
-        borderWidth: 1.5, borderRadius: 8, borderSkipped: false,
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      animation: { duration: 700, easing: 'easeOutQuart' },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#faf7f3',
-          borderColor: '#ddd4c5', borderWidth: 1,
-          titleColor: '#3a3028', bodyColor: '#9e9088',
-          padding: 14,
-          callbacks: {
-            title: ctx => { const e = entries[ctx[0].dataIndex]; return `${e.store}  ${e.name}`; },
-            label: ctx => ` 加班時數：${ctx.parsed.y} 小時`
-          }
-        }
-      },
-      scales: {
-        x: {
-          grid: { color: 'rgba(221,212,197,0.5)' },
-          ticks: { color: '#9e9088', font: { size: 11, family: 'Noto Sans TC' }, maxRotation: 40 }
-        },
-        y: {
-          grid: { color: 'rgba(221,212,197,0.5)' },
-          ticks: { color: '#9e9088', font: { size: 11, family: 'DM Mono' }, callback: v => v + ' h' },
-          beginAtZero: true
-        }
-      }
-    }
-  });
-
-  const storeLabel = currentStore==='全部'?'全部門市':currentStore;
-  const typeLabel  = currentType ==='全部'?'外場＋內場':currentType;
-  document.getElementById('chart-title').textContent    = `${storeLabel} · ${typeLabel} · 各美容師加班時數`;
-  document.getElementById('chart-subtitle').textContent = `共 ${entries.length} 位美容師 · 最高 ${Math.max(...values)} 小時 · 僅計算已審核同意記錄`;
-}
-
-function renderTable(entries) {
-  const tbody = document.getElementById('table-body');
-  tbody.innerHTML = '';
-  const total = entries.reduce((s,e) => s+e.hours, 0);
-  entries.forEach((e,i) => {
-    const pct = total ? ((e.hours/total)*100).toFixed(1) : 0;
-    let lvClass='badge-low', lvText='正常';
-    if (e.hours>=20){lvClass='badge-high';lvText='偏高';}
-    else if(e.hours>=10){lvClass='badge-mid';lvText='中等';}
-    const typeClass = e.typeLabel==='外場＋內場'?'badge-both':e.typeLabel==='外場'?'badge-outer':'badge-inner';
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><span class="rank ${i===0?'rank-1':''}">#${i+1}</span></td>
-      <td>${e.store}</td><td>${e.name}</td>
-      <td><span class="badge ${typeClass}">${e.typeLabel}</span></td>
-      <td style="font-family:'DM Mono',monospace;font-weight:400;color:var(--text)">${e.hours}</td>
-      <td style="color:var(--muted);font-family:'DM Mono',monospace;font-size:12px;">${pct}%</td>
-      <td><span class="badge ${lvClass}">${lvText}</span></td>`;
-    tbody.appendChild(tr);
-  });
-  document.getElementById('table-section').style.display = 'block';
-}
-
-function renderAll() {
-  renderStoreTabs();
-  const entries = aggregate(getFiltered());
-  renderChart(entries);
-  renderTable(entries);
-}
-
-function onBothLoaded() {
-  const outerData = parseOuter(results.outer);
-  const innerData = parseInner(results.inner);
-  allData = [...outerData, ...innerData];
-
-  const dot = document.getElementById('status-dot');
-  const txt = document.getElementById('status-text');
-
-  if (!allData.length) {
-    document.getElementById('chart-wrap').innerHTML = `
-      <div class="error-box"><strong>目前沒有審核結果為「同意」的加班記錄</strong>
-      <p>資料讀取成功，但尚無已審核同意的資料可顯示。</p></div>`;
-    dot.classList.add('live'); txt.textContent = 'connected';
-    document.getElementById('last-updated').textContent = `更新於 ${new Date().toLocaleString('zh-TW')}`;
-    return;
-  }
-
-  dot.classList.add('live'); txt.textContent = 'live';
-  document.getElementById('last-updated').textContent =
-    `更新於 ${new Date().toLocaleString('zh-TW')} · 外場 ${outerData.length} 筆 · 內場 ${innerData.length} 筆`;
-
-  // Pre-assign store colors in consistent order
-  storeColorMap = {};
-  const palette = ['#c8a882','#3d5a52','#e8c4b8','#6b8c82','#d4a898'];
-  [...new Set(allData.map(d => d.store))].forEach((s, i) => {
-    storeColorMap[s] = palette[i % palette.length];
-  });
-
-  renderSummary(allData);
-  renderAll();
-}
-
-function onError(msg) {
-  document.getElementById('chart-wrap').innerHTML = `
-    <div class="error-box"><strong>無法讀取 Google Sheets 資料</strong>
-    <p>${msg}</p><p style="margin-top:8px;font-size:11px;">請確認試算表已設為「知道連結的人可以檢視」</p></div>`;
-  document.getElementById('status-dot').classList.add('error');
-  document.getElementById('status-text').textContent = 'error';
-}
-
-// JSONP 載入
-const s1 = document.createElement('script');
-s1.src = `${BASE}?tqx=out:json%3BresponseHandler:handleOuter&gid=0&headers=3`;
-s1.onerror = () => onError('外場工作表載入失敗');
-document.head.appendChild(s1);
-
-const s2 = document.createElement('script');
-s2.src = `${BASE}?tqx=out:json%3BresponseHandler:handleInner&gid=754199433&headers=4`;
-s2.onerror = () => onError('內場工作表載入失敗');
-document.head.appendChild(s2);
-
-setTimeout(() => {
-  if (loadedCount < 2) onError('載入逾時，請確認網路連線與試算表權限後重新整理頁面。');
-}, 10000);
+function renderTable(entries){var tbody=document.getElementById('table-body');tbody.innerHTML='';var total=entries.reduce(function(s,e){return s+e.hours;},0);entries.forEach(function(e,i){var pct=total?((e.hours/total)*100).toFixed(1):0,lc='badge-low',lt='正常';if(e.hours>=20){lc='badge-high';lt='偏高';}else if(e.hours>=10){lc='badge-mid';lt='中等';}var tc=e.typeLabel==='外場＋內場'?'badge-both':e.typeLabel==='外場'?'badge-outer':'badge-inner';var tr=document.createElement('tr');tr.innerHTML='<td><span class="rank '+(i===0?'rank-1':'')+'\">#'+(i+1)+'</span></td><td>'+e.store+'</td><td>'+e.name+'</td><td><span class="badge '+tc+'">'+e.typeLabel+'</span></td><td style="font-family:DM Mono,monospace;font-weight:400;color:#3a3028">'+e.hours+'</td><td style="color:#9e9088;font-size:12px;">'+pct+'%</td><td><span class="badge '+lc+'">'+lt+'</span></td>';tbody.appendChild(tr);});document.getElementById('table-section').style.display='block';}
+function renderAll(){renderStoreTabs();var entries=aggregate(getFiltered());renderChart(entries);renderTable(entries);}
+function onBothLoaded(){var od=parseOuter(results.outer),id=parseInner(results.inner);allData=od.concat(id);var dot=document.getElementById('status-dot'),txt=document.getElementById('status-text');if(!allData.length){document.getElementById('chart-wrap').innerHTML='<div class="error-box"><strong>目前沒有審核結果為「同意」的加班記錄</strong><p>資料讀取成功但尚無資料。</p></div>';dot.classList.add('live');txt.textContent='connected';document.getElementById('last-updated').textContent='更新於 '+new Date().toLocaleString('zh-TW');return;}dot.classList.add('live');txt.textContent='live';document.getElementById('last-updated').textContent='更新於 '+new Date().toLocaleString('zh-TW')+' · 外場 '+od.length+' 筆 · 內場 '+id.length+' 筆';storeColorMap={};var sts=[];allData.forEach(function(d){if(sts.indexOf(d.store)<0)sts.push(d.store);});sts.forEach(function(s,i){storeColorMap[s]=PALETTE[i%PALETTE.length];});renderSummary(allData);renderAll();}
+function onError(msg){document.getElementById('chart-wrap').innerHTML='<div class="error-box"><strong>無法讀取資料</strong><p>'+msg+'</p></div>';document.getElementById('status-dot').classList.add('error');document.getElementById('status-text').textContent='error';}
+var s1=document.createElement('script');s1.src=BASE+'?tqx=out:json%3BresponseHandler:handleOuter&gid=0&headers=3';s1.onerror=function(){onError('外場載入失敗');};document.head.appendChild(s1);
+var s2=document.createElement('script');s2.src=BASE+'?tqx=out:json%3BresponseHandler:handleInner&gid=754199433&headers=4';s2.onerror=function(){onError('內場載入失敗');};document.head.appendChild(s2);
+setTimeout(function(){if(loadedCount<2)onError('載入逾時。');},10000);
 </script>
-
-
-</body></html>
+</body>
+</html>
